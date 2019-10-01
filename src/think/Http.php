@@ -239,8 +239,25 @@ class Http
      */
     protected function getRoutePath(): string
     {
-        if ($this->app->config->get('route.cross_app_route')) {
-            return $this->app->getRootPath() . 'route' . DIRECTORY_SEPARATOR;
+        if ($this->isMulti() && !empty($this->app->config->get('route.cross_app_route', false))) {
+
+            $appName = '';
+            // 绑定域名查找应用
+            $bindDomains = $this->app->config->get('app.domain_bind', []);
+            if (!empty($bindDomains)) {
+                $appName = helper\Arr::get($bindDomains, $this->app->get('request')->host());
+            }
+
+            // 文件夹方式查找应用
+            if (empty($appName)) {
+                $array = explode('/', $this->app->get('request')->pathinfo());
+                $appName = array_shift($array);
+                if (empty($appName) || !is_dir($this->app->getAppPath() . $appName)) {
+                    $appName = '';
+                }
+            }
+
+            $this->app->http->setApp($appName ?: $this->app->config->get('app.default_app', 'index'));
         }
 
         if ($this->isMulti() && is_dir($this->app->getAppPath() . 'route')) {
