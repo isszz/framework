@@ -858,15 +858,13 @@ class Route
     public function url(string $url): UrlDispatch
     {
         if ($this->app->http->isMulti() && !empty($this->config['cross_app_route'])) {
-            if ('' === $url) {
-                $this->app->http->setApp($this->app->config->get('app.default_app', 'index'));
-            } else {
-                $array = explode('|', $url);
-                $this->app->http->setApp(array_shift($array));
-                $url = implode('|', $array);
+            $app = app('request')->app();
+            if ($url !== '' && stripos($url, $app) !== false) {
+                $url = str_replace(app('request')->app(), '', $url);
             }
+            $url = trim($url, '|');
         }
-
+        
         return new UrlDispatch($this->request, $this->group, $url);
     }
 
